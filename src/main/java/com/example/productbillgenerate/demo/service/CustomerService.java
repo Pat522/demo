@@ -28,6 +28,12 @@ public class CustomerService {
 
 
     public ResponseEntity<Customer> addCustomer(Customer customer) {
+      if(customer.getEmail()==null || customer.getEmail().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+        if(customer.getMobile()==null || customer.getMobile().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }   
         Customer savedCustomer = repo.save(customer);
         return new ResponseEntity<>(savedCustomer, HttpStatus.CREATED);
     }
@@ -38,7 +44,7 @@ public class CustomerService {
     }
 
     public ResponseEntity<Customer> getCustomerById(Long id) {
-        Customer customer = repo.findById(id).orElse(null);
+        Customer customer = repo.findById(id).orElseThrow() ;
         if (customer != null) {
             return ResponseEntity.ok(customer);
         } else {
@@ -47,7 +53,7 @@ public class CustomerService {
     }
 
     public ResponseEntity<Customer> updateCustomer(Long id, Customer updatedCustomer) {
-        Customer customer = repo.findById(id).orElse(null);
+        Customer customer = repo.findById(id).orElseThrow();
         if (customer != null) {
             customer.setCustomerName(updatedCustomer.getCustomerName());
             customer.setContactPerson(updatedCustomer.getContactPerson());
@@ -65,7 +71,6 @@ public class CustomerService {
     }
 
     public ResponseEntity<Customer> patchCustomer(Long id, Map<String, Object> updates) {
-
     Customer customer = repo.findById(id).orElseThrow();
 
     objectMapper.updateValue(customer, updates);
