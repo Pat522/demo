@@ -52,22 +52,21 @@ public class CustomerService {
         }
     }
 
-    public ResponseEntity<Customer> updateCustomer(Long id, Customer updatedCustomer) {
-        Customer customer = repo.findById(id).orElseThrow();
-        if (customer != null) {
-            customer.setCustomerName(updatedCustomer.getCustomerName());
-            customer.setContactPerson(updatedCustomer.getContactPerson());
-            customer.setEmail(updatedCustomer.getEmail());
-            customer.setMobile(updatedCustomer.getMobile());
-            customer.setGstNumber(updatedCustomer.getGstNumber());
-            customer.setAddress(updatedCustomer.getAddress());
-            customer.setCity(updatedCustomer.getCity());
-            customer.setState(updatedCustomer.getState());
-            Customer saved = repo.save(customer);
-            return ResponseEntity.ok(saved);
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+    public ResponseEntity<Customer> updateCustomer(Long id, Customer customer) {
+        Customer existingCustomer = repo.findById(id).orElseThrow();
+
+        if(isAnyFieldNullOrEmpty(customer)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }   
+
+ 
+        Customer updatedCustomer = repo.save(existingCustomer);
+        return ResponseEntity.ok(updatedCustomer);
+    }
+
+    private boolean isAnyFieldNullOrEmpty(Customer customer) {
+        return customer.getEmail() == null || customer.getEmail().isEmpty() ||
+               customer.getMobile() == null || customer.getMobile().isEmpty();
     }
 
     public ResponseEntity<Customer> patchCustomer(Long id, Map<String, Object> updates) {
@@ -78,11 +77,16 @@ public class CustomerService {
     return ResponseEntity.ok(customer);
 }
 
-public ResponseEntity<String> deleteCustomerById(Long id) {
-    return repo.existsById(id)
-            ? ResponseEntity.ok("Customer deleted successfully.")
-            : ResponseEntity.status(HttpStatus.NOT_FOUND).body("Customer not found.");
-}
+    public ResponseEntity<String> deleteCustomerById(Long id) {
+        if (!repo.existsById(id)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Customer not found with id: " + id);
+        }
+
+        repo.deleteById(id);
+        return ResponseEntity.ok("Customer deleted successfully");
+    }
+
 }
 
 

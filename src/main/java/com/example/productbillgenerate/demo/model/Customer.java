@@ -24,9 +24,10 @@ public class Customer {
     private String contactPerson;
     private String email;
     private String mobile;
-    private String gstNumber;
     private String address;
     private String city;
     private String state;
+    private String gstNumber;
+    
 
 }
