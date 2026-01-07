@@ -22,4 +22,8 @@ public class OrderController {
         return service.createOrder(request.getCustomerId(), request.getProducts());
     }   
 
+     @PutMapping("/{id}/cancel")
+    public ResponseEntity<?> cancel(@PathVariable Long id) {
+        return service.cancelOrder(id);
+    }
 }

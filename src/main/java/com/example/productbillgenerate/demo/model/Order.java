@@ -26,26 +26,24 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String orderNumber;
     private LocalDate orderDate;
+    private String orderNumber;
     private double totalAmount;
-    private Integer ordeQuantity;
 
+    private OrderStatus status;
+
+       public enum OrderStatus {
+        DISCONTINUED,        
+        CREATED,
+        CANCELLED
+    }
 
     @ManyToOne
     private Customer customer;
 
     @OneToMany
     private List<OrderItem> items;
-
-    private OrderStatus status;
-
-       public enum OrderStatus {
-        CREATED,
-DISPATCHED,        
-CANCELLED
-    }
-
+  
 
 }
 

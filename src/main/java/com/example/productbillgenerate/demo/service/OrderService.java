@@ -43,6 +43,12 @@ public class OrderService {
         for (Map.Entry<Long, Integer> entry : products.entrySet()) {
             Product product = productRepo.findById(entry.getKey()).orElse(null);
 
+             if (!"Active".equalsIgnoreCase(product.getProductStatus())) {
+                return ResponseEntity
+                        .status(HttpStatus.BAD_REQUEST)
+                        .body("Product is discontinued and can not order");
+            }
+
             if (product.getStockQuantity() < entry.getValue()) {
                 return ResponseEntity
                         .status(HttpStatus.BAD_REQUEST)
@@ -52,55 +58,80 @@ public class OrderService {
 
 
         Order order = new Order();
+        order.setId(order.getId());
         order.setCustomer(customer);
         order.setOrderNumber("ORD-" + System.currentTimeMillis());
         order.setOrderDate(LocalDate.now());
         order.setStatus(Order.OrderStatus.CREATED);
         order = orderRepo.save(order);
 
-        List<Map<String, Object>> productList = new ArrayList<>();
-        double totalAmount = 0;
+    List<Map<String, Object>> productList = new ArrayList<>();
+    double totalAmount = 0;
+
+    for (Long productId : products.keySet()) 
+    {
+
+    Integer quantity = products.get(productId);
+
+    Product product = productRepo.findById(productId).get();
+    product.setStockQuantity(product.getStockQuantity() - quantity);
+    productRepo.save(product);
 
 
-        for (Map.Entry<Long, Integer> entry : products.entrySet()) {
+    OrderItem orderItem = new OrderItem();
+    orderItem.setOrder(order);
+    orderItem.setProduct(product);
+    orderItem.setQuantity(quantity);
+    orderItem.setPrice(product.getPrice());
+    orderItemRepo.save(orderItem);
 
-            Product product = productRepo.findById(entry.getKey()).get();
-            Integer quantity = entry.getValue();
+    double itemTotal = product.getPrice() * quantity;
+    totalAmount =totalAmount+ itemTotal;
 
-            product.setStockQuantity(product.getStockQuantity() - quantity);
-            productRepo.save(product);
+    Map<String, Object> productMap = new HashMap<>();
+    productMap.put("productId", product.getId());
+    productMap.put("productName", product.getProductName());
+    productMap.put("wattage", product.getWattage());
+    productMap.put("category", product.getCategory());
+    productMap.put("price", product.getPrice());
+    productMap.put("quantity", quantity);
+    productMap.put("status", product.getProductStatus());
 
-            OrderItem orderItem = new OrderItem();
-            orderItem.setOrder(order);
-            orderItem.setProduct(product);
-            orderItem.setQuantity(quantity);
-            orderItem.setPrice(product.getPrice());
-            orderItemRepo.save(orderItem);
+    productList.add(productMap);
+    }
 
-            double itemTotal = product.getPrice() * quantity;
-            totalAmount = itemTotal;
+    Map<String, Object> response = new HashMap<>();
+    response.put("orderNumber", order.getOrderNumber());
+    response.put("orderDate", order.getOrderDate());
+    response.put("status", order.getStatus());
+    response.put("Id",order.getId());
+    response.put("totalAmount", totalAmount);
+    response.put("products", productList);
 
-            Map<String, Object> productMap = new HashMap<>();
-            productMap.put("productId", product.getId());
-            productMap.put("productName", product.getProductName());
-            productMap.put("wattage", product.getWattage());
-            productMap.put("category", product.getCategory());
-            productMap.put("price", product.getPrice());
-            productMap.put("quantity", quantity);
-            productMap.put("status", product.getProductStatus());
+    return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
 
-            productList.add(productMap);
+    @Transactional
+    public ResponseEntity<?> cancelOrder(Long orderId) {
+
+        Order order = orderRepo.findById(orderId).orElse(null);
+
+        if (order.getStatus() == Order.OrderStatus.CANCELLED) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("Order is Cancel Already");
         }
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("orderNumber", order.getOrderNumber());
-        response.put("orderDate", order.getOrderDate());
-        response.put("status", order.getStatus());
-        response.put("totalAmount", totalAmount);
-        response.put("products", productList);
 
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(response);
+      List<OrderItem> orderItems = orderItemRepo.findByOrder(order);
+      for (OrderItem orderItem : orderItems) {
+       Product product = orderItem.getProduct();
+       product.setStockQuantity(product.getStockQuantity() + orderItem.getQuantity());
+       productRepo.save(product);
+   }
+        order.setStatus(Order.OrderStatus.CANCELLED);
+        orderRepo.save(order);
+
+        return ResponseEntity.ok("Order cancelled successfully. Stock restored.");
     }
 }
