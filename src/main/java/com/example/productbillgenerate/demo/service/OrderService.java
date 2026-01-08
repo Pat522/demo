@@ -13,6 +13,7 @@ import com.example.productbillgenerate.demo.model.Order;
 import com.example.productbillgenerate.demo.model.OrderItem;
 import com.example.productbillgenerate.demo.model.Product;
 import com.example.productbillgenerate.demo.repo.CustomerRepository;
+import com.example.productbillgenerate.demo.repo.InvoiceRepository;
 import com.example.productbillgenerate.demo.repo.OrderItemRepository;
 import com.example.productbillgenerate.demo.repo.OrderRepository;
 import com.example.productbillgenerate.demo.repo.ProductRepository;
@@ -20,25 +21,31 @@ import com.example.productbillgenerate.demo.repo.ProductRepository;
 @Service
 public class OrderService {
 
+    private final InvoiceRepository invoiceRepo;
     private final OrderRepository orderRepo;
     private final ProductRepository productRepo;
     private final CustomerRepository customerRepo;
     private final OrderItemRepository orderItemRepo;
 
+
+
     public OrderService(OrderRepository orderRepo,
                         CustomerRepository customerRepo,
                         ProductRepository productRepo,
-                        OrderItemRepository orderItemRepo) {
+                        OrderItemRepository orderItemRepo,InvoiceRepository invoiceRepo
+                        ) {
         this.orderRepo = orderRepo;
         this.productRepo = productRepo;
         this.customerRepo = customerRepo;
         this.orderItemRepo = orderItemRepo;
+        this.invoiceRepo=invoiceRepo;
     }
 
     @Transactional
     public ResponseEntity<?> createOrder(Long customerId, Map<Long, Integer> products) {
 
         Customer customer = customerRepo.findById(customerId).orElse(null);
+
 
         for (Map.Entry<Long, Integer> entry : products.entrySet()) {
             Product product = productRepo.findById(entry.getKey()).orElse(null);
@@ -58,11 +65,10 @@ public class OrderService {
 
 
         Order order = new Order();
-        order.setId(order.getId());
         order.setCustomer(customer);
         order.setOrderNumber("ORD-" + System.currentTimeMillis());
         order.setOrderDate(LocalDate.now());
-        order.setStatus(Order.OrderStatus.CREATED);
+        order.setOrderStatus(Order.Status.CREATED);
         order = orderRepo.save(order);
 
     List<Map<String, Object>> productList = new ArrayList<>();
@@ -70,10 +76,9 @@ public class OrderService {
 
     for (Long productId : products.keySet()) 
     {
-
+    Product product = productRepo.findById(productId).get();
     Integer quantity = products.get(productId);
 
-    Product product = productRepo.findById(productId).get();
     product.setStockQuantity(product.getStockQuantity() - quantity);
     productRepo.save(product);
 
@@ -103,12 +108,12 @@ public class OrderService {
     Map<String, Object> response = new HashMap<>();
     response.put("orderNumber", order.getOrderNumber());
     response.put("orderDate", order.getOrderDate());
-    response.put("status", order.getStatus());
+    response.put("status", order.getOrderStatus());
     response.put("Id",order.getId());
     response.put("totalAmount", totalAmount);
     response.put("products", productList);
 
-    return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    return ResponseEntity.ok().body(response);
     }
 
     @Transactional
@@ -116,7 +121,7 @@ public class OrderService {
 
         Order order = orderRepo.findById(orderId).orElse(null);
 
-        if (order.getStatus() == Order.OrderStatus.CANCELLED) {
+        if (order.getOrderStatus() == Order.Status.CANCELLED) {
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
                     .body("Order is Cancel Already");
@@ -129,9 +134,12 @@ public class OrderService {
        product.setStockQuantity(product.getStockQuantity() + orderItem.getQuantity());
        productRepo.save(product);
    }
-        order.setStatus(Order.OrderStatus.CANCELLED);
+        order.setOrderStatus(Order.Status.CANCELLED);
         orderRepo.save(order);
 
         return ResponseEntity.ok("Order cancelled successfully. Stock restored.");
     }
+
+  
+
 }

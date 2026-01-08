@@ -30,9 +30,9 @@ public class Order {
     private String orderNumber;
     private double totalAmount;
 
-    private OrderStatus status;
+    private Status orderStatus;
 
-       public enum OrderStatus {
+       public enum Status {
         DISCONTINUED,        
         CREATED,
         CANCELLED
