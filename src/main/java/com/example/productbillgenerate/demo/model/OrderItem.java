@@ -22,7 +22,6 @@ public class OrderItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-   
 
     @ManyToOne
     private Order order;
@@ -30,11 +29,8 @@ public class OrderItem {
     @ManyToOne
     private Product product;
 
-   /// @OneToMany
-    //private List<OrderItem> items;
 
-
-    private Integer Quantity;
+    private Integer quantity;
     private Double price;
     
 }

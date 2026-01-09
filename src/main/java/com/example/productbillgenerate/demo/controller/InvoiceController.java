@@ -10,18 +10,18 @@ import com.example.productbillgenerate.demo.service.InvoiceService;
 
 @RestController
 @RequestMapping("/api/invoices")
-public class InvoiceController {
+public class InvoiceController 
+{
       private final InvoiceService invoiceService;
 
     public InvoiceController(InvoiceService invoiceService) {
         this.invoiceService = invoiceService;
     }
 
-    // Generate Invoice
-   @PostMapping("/generate/{orderId}")
-    public ResponseEntity<?> generateInvoice(@PathVariable("orderId") Long orderId) 
+   @PostMapping("/generate/{id}")
+    public ResponseEntity<?> generateInvoice(@PathVariable Long id) 
     {
-    return invoiceService.generateInvoiceByOrderId(orderId);
+    return invoiceService.generateInvoiceByOrderId(id);
     }
 
 

@@ -1,5 +1,6 @@
 package com.example.productbillgenerate.demo.model;
 
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -29,5 +30,4 @@ public class Customer {
     private String state;
     private String gstNumber;
     
-
 }

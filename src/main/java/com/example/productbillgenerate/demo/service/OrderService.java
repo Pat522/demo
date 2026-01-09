@@ -32,8 +32,8 @@ public class OrderService {
     public OrderService(OrderRepository orderRepo,
                         CustomerRepository customerRepo,
                         ProductRepository productRepo,
-                        OrderItemRepository orderItemRepo,InvoiceRepository invoiceRepo
-                        ) {
+                        OrderItemRepository orderItemRepo,InvoiceRepository invoiceRepo) 
+    {
         this.orderRepo = orderRepo;
         this.productRepo = productRepo;
         this.customerRepo = customerRepo;
@@ -42,13 +42,15 @@ public class OrderService {
     }
 
     @Transactional
-    public ResponseEntity<?> createOrder(Long customerId, Map<Long, Integer> products) {
+    public ResponseEntity<?> createOrder(Long customerId, Map<Long, Integer> products) 
+    {
 
-        Customer customer = customerRepo.findById(customerId).orElse(null);
-
-
-        for (Map.Entry<Long, Integer> entry : products.entrySet()) {
-            Product product = productRepo.findById(entry.getKey()).orElse(null);
+    Customer customer = customerRepo.findById(customerId).orElse(null);
+         
+    for (Long productId : products.keySet()) 
+    {
+           Product product = productRepo.findById(productId).get();
+            Integer orderQuantity = products.get(productId);
 
              if (!"Active".equalsIgnoreCase(product.getProductStatus())) {
                 return ResponseEntity
@@ -56,13 +58,13 @@ public class OrderService {
                         .body("Product is discontinued and can not order");
             }
 
-            if (product.getStockQuantity() < entry.getValue()) {
+
+            if (product.getStockQuantity() < orderQuantity) {
                 return ResponseEntity
                         .status(HttpStatus.BAD_REQUEST)
                         .body("Insufficient stock for product: " + product.getProductName());
             }
         }
-
 
         Order order = new Order();
         order.setCustomer(customer);
@@ -93,7 +95,7 @@ public class OrderService {
     double itemTotal = product.getPrice() * quantity;
     totalAmount =totalAmount+ itemTotal;
 
-    Map<String, Object> productMap = new HashMap<>();
+    Map<String, Object> productMap = new LinkedHashMap<>();
     productMap.put("productId", product.getId());
     productMap.put("productName", product.getProductName());
     productMap.put("wattage", product.getWattage());
@@ -105,41 +107,50 @@ public class OrderService {
     productList.add(productMap);
     }
 
-    Map<String, Object> response = new HashMap<>();
+    Map<String, Object> response = new LinkedHashMap<>();
+    response.put("Id",order.getId());
     response.put("orderNumber", order.getOrderNumber());
     response.put("orderDate", order.getOrderDate());
+    response.put("totalAmount", totalAmount);  
     response.put("status", order.getOrderStatus());
-    response.put("Id",order.getId());
-    response.put("totalAmount", totalAmount);
     response.put("products", productList);
 
     return ResponseEntity.ok().body(response);
     }
 
     @Transactional
-    public ResponseEntity<?> cancelOrder(Long orderId) {
-
-        Order order = orderRepo.findById(orderId).orElse(null);
-
-        if (order.getOrderStatus() == Order.Status.CANCELLED) {
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body("Order is Cancel Already");
-        }
-
-
-      List<OrderItem> orderItems = orderItemRepo.findByOrder(order);
-      for (OrderItem orderItem : orderItems) {
-       Product product = orderItem.getProduct();
-       product.setStockQuantity(product.getStockQuantity() + orderItem.getQuantity());
-       productRepo.save(product);
-   }
-        order.setOrderStatus(Order.Status.CANCELLED);
-        orderRepo.save(order);
-
-        return ResponseEntity.ok("Order cancelled successfully. Stock restored.");
-    }
-
+    public ResponseEntity<?> cancelOrder(Long id) 
+    {
+    Order order = orderRepo.findById(id).orElse(null);
   
 
+    if (order.getOrderStatus() == Order.Status.CANCELLED) 
+    
+    {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body("Order is already cancelled");
+    }
+
+
+    if (invoiceRepo.findById(id).isPresent()) 
+    {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body("Cannot cancel the order because invoice is already generated for this order");
+    }
+
+
+   List<OrderItem> orderItems = orderItemRepo.findByOrder(order);
+   for (OrderItem orderItem : orderItems) 
+    {
+    Product product = orderItem.getProduct();
+    product.setStockQuantity(product.getStockQuantity() + orderItem.getQuantity());
+    productRepo.save(product);
+    }
+
+
+    order.setOrderStatus(Order.Status.CANCELLED);
+    orderRepo.save(order);
+
+    return ResponseEntity.ok("Order cancelled successfully. Stock restored.");
+}
 }

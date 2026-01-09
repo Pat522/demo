@@ -27,7 +27,9 @@ public class CustomerService {
     private ObjectMapper objectMapper;
 
 
-    public ResponseEntity<Customer> addCustomer(Customer customer) {
+    public ResponseEntity<Customer> addCustomer(Customer customer) 
+    {
+
       if(customer.getEmail()==null || customer.getEmail().isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }

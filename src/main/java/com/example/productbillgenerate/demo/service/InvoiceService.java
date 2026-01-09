@@ -1,7 +1,7 @@
 package com.example.productbillgenerate.demo.service;
 
 import java.time.LocalDate;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -29,40 +29,42 @@ public class InvoiceService {
 
     public InvoiceService(InvoiceRepository invoiceRepo,
                           OrderRepository orderRepo,
-                          OrderItemRepository orderItemRepo) {
+                          OrderItemRepository orderItemRepo) 
+    {
         this.invoiceRepo = invoiceRepo;
         this.orderRepo = orderRepo;
         this.orderItemRepo = orderItemRepo;
     }
 
     @Transactional
-    public ResponseEntity<?> generateInvoiceByOrderId(Long orderId) 
+    public ResponseEntity<?> generateInvoiceByOrderId(Long id) 
     {
-       Order  order = orderRepo.findById(orderId).orElse(null);
 
-        // Prevent duplicate invoice
-        if (invoiceRepo.findById(orderId).isPresent()) {
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body("Invoice already generated for this order");
-        }
+    Order order = orderRepo.findById(id).orElse(null);
+  
 
-        //Fetch Order Item
-        List<OrderItem> items = orderItemRepo.findByOrderId(orderId);
-         if (items.isEmpty()) {
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body("No order items found for this order");
-        }
-
-       double totalAmount = 0;
-
-       for (OrderItem item : items) {
-       totalAmount = totalAmount+(item.getPrice() * item.getQuantity());
+    if (invoiceRepo.findById(id).isPresent()) 
+    {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body("Invoice already generated for this order");
     }
 
-    double gstAmount = totalAmount * 0.18;
-    double grandTotal = totalAmount + gstAmount;
+
+    if (order.getOrderStatus() == Order.Status.CANCELLED) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body("Cannot generate invoice for a cancelled order");
+    }
+
+
+       List<OrderItem> orderItems = orderItemRepo.findByOrder(order);
+      
+        double totalAmount = 0.0;
+        for (OrderItem item : orderItems) 
+        {
+        totalAmount = totalAmount+(item.getPrice() * item.getQuantity());
+        }
+      double gstAmount = totalAmount * 0.18;
+      double grandTotal = totalAmount + gstAmount;
 
 
         Invoice invoice = new Invoice();
@@ -75,7 +77,7 @@ public class InvoiceService {
 
         invoiceRepo.save(invoice);
 
-        Map<String, Object> response = new HashMap<>();
+        Map<String, Object> response = new LinkedHashMap<>();
         response.put("invoiceNumber", invoice.getInvoiceNumber());
         response.put("invoiceDate", invoice.getInvoiceDate());
         response.put("orderNumber", order.getOrderNumber());
@@ -86,10 +88,4 @@ public class InvoiceService {
 
         return ResponseEntity.ok(response);
     }
-
-
-
-
-  
-
 }
