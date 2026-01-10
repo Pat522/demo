@@ -32,7 +32,7 @@ public class CustomerController {
         return service.addCustomer(customer);
     }
 
-    @GetMapping
+    @GetMapping("/all")
     public ResponseEntity<List<Customer>> getAllCustomers() {
         return service.getAllCustomers();
     }

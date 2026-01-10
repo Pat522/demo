@@ -1,12 +1,14 @@
 package com.example.productbillgenerate.demo.model;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -21,11 +23,10 @@ public class Order {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long Id;
 
     private LocalDate orderDate;
     private String orderNumber;
-
     private Status orderStatus;
 
        public enum Status {
@@ -37,7 +38,9 @@ public class Order {
     @ManyToOne
     private Customer customer;
 
-   
+    @OneToMany
+    private List<OrderItem> items;
+
 }
 
 

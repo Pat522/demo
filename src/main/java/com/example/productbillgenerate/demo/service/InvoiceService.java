@@ -41,6 +41,10 @@ public class InvoiceService {
     {
 
     Order order = orderRepo.findById(id).orElse(null);
+    if (order == null) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body("Order not found for order id: " + id);
+    }
   
 
     if (invoiceRepo.findById(id).isPresent()) 
@@ -63,8 +67,8 @@ public class InvoiceService {
         {
         totalAmount = totalAmount+(item.getPrice() * item.getQuantity());
         }
-      double gstAmount = totalAmount * 0.18;
-      double grandTotal = totalAmount + gstAmount;
+        double gstAmount = totalAmount * 0.18;
+        double grandTotal = totalAmount + gstAmount;
 
 
         Invoice invoice = new Invoice();
@@ -78,6 +82,7 @@ public class InvoiceService {
         invoiceRepo.save(invoice);
 
         Map<String, Object> response = new LinkedHashMap<>();
+        response.put("invoiceid",invoice.getId());
         response.put("invoiceNumber", invoice.getInvoiceNumber());
         response.put("invoiceDate", invoice.getInvoiceDate());
         response.put("orderNumber", order.getOrderNumber());
@@ -88,4 +93,28 @@ public class InvoiceService {
 
         return ResponseEntity.ok(response);
     }
+    
+    @Transactional
+    public ResponseEntity<?> getInvoiceByOrderId(Long id) 
+    {
+    Invoice invoice = invoiceRepo.findById(id).orElse(null);
+    if (invoice == null) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body("Invoice not found for order id: " + id);
+    }
+
+   Order order = invoice.getOrder();
+
+    Map<String, Object> response = new LinkedHashMap<>();
+    response.put("invoiceid",invoice.getId());
+    response.put("invoiceNumber", invoice.getInvoiceNumber());
+    response.put("invoiceDate", invoice.getInvoiceDate());
+    response.put("orderNumber", order.getOrderNumber());
+    response.put("totalAmount", invoice.getTotalAmount());
+    response.put("gstAmount", invoice.getGstAmount());
+    response.put("paymentStatus", invoice.getPaymentStatus());
+
+    return ResponseEntity.ok(response);
+    }
 }
+

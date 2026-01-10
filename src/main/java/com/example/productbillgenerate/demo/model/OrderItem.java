@@ -1,6 +1,8 @@
 package com.example.productbillgenerate.demo.model;
 
 
+
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -20,7 +22,7 @@ public class OrderItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+     private Long id;
 
 
     @ManyToOne
@@ -32,6 +34,10 @@ public class OrderItem {
 
     private Integer quantity;
     private Double price;
-    
+
+   
+
 }
+
+  
 

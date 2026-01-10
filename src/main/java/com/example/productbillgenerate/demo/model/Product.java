@@ -25,8 +25,6 @@ public class Product {
     private Double price;   
     private Integer stockQuantity;
     private String category;
-    private String productStatus;
-
-    
+    private String productStatus; 
     
 } 
